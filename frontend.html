@@ -1,0 +1,1060 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Dự đoán Churn</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --success: #22c55e;
+            --danger: #ef4444;
+            --bg-dark: #f0f9ff;
+            --bg-card: #ffffff;
+            --bg-card-hover: #e0f2fe;
+            --text-primary: #0f172a;
+            --text-secondary: #64748b;
+            --border: #bae6fd;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f0f9ff;
+            min-height: 100vh;
+            color: var(--text-primary);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            width: 48px;
+            height: 48px;
+            background: #2563eb;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .logo-text h1 {
+            font-size: 1.4rem;
+            font-weight: 700;
+        }
+
+        .logo-text p {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 100px;
+            font-size: 0.8rem;
+            color: var(--success);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--success);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1
+            }
+
+            50% {
+                opacity: 0.5
+            }
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+        }
+
+        .btn-outline:hover {
+            background: var(--bg-card);
+            border-color: var(--primary);
+        }
+
+        .btn-outline.active {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+
+        .btn-primary {
+            background: #2563eb;
+            color: white;
+            box-shadow: none;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .page {
+            display: none;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        /* Cards */
+        .card {
+            background: var(--bg-card);
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+        }
+
+        .card-icon.blue {
+            background: rgba(99, 102, 241, 0.2);
+        }
+
+        .card-icon.green {
+            background: rgba(16, 185, 129, 0.2);
+        }
+
+        .card-title {
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .card-body {
+            padding: 20px;
+        }
+
+        /* Prediction Grid - 2 columns balanced */
+        .predict-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            align-items: start;
+        }
+
+        @media (max-width: 1024px) {
+            .predict-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Form */
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+
+        .form-group.full {
+            grid-column: span 2;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.7rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 10px 14px;
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+        }
+
+        .slider-container {
+            position: relative;
+        }
+
+        .slider-value {
+            position: absolute;
+            right: 0;
+            top: 0;
+            background: var(--primary);
+            padding: 2px 8px;
+            border-radius: 5px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 5px;
+            background: var(--bg-dark);
+            border-radius: 3px;
+            outline: none;
+            -webkit-appearance: none;
+            margin-top: 6px;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            background: #2563eb;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        /* SHAP Section - under button */
+        .shap-section {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+        }
+
+        .shap-title {
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--text-secondary);
+        }
+
+        .shap-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .shap-card {
+            background: var(--bg-dark);
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+
+        .shap-card-header {
+            padding: 8px 12px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            text-align: center;
+        }
+
+        .shap-card.danger .shap-card-header {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--danger);
+        }
+
+        .shap-card.success .shap-card-header {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--success);
+        }
+
+        .shap-card img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        /* Result - Right side */
+        .result-placeholder {
+            text-align: center;
+            padding: 50px 20px;
+            color: var(--text-secondary);
+        }
+
+        .result-placeholder-icon {
+            font-size: 3rem;
+            margin-bottom: 12px;
+            opacity: 0.3;
+        }
+
+        .result-content {
+            display: none;
+        }
+
+        .result-content.active {
+            display: block;
+        }
+
+        .prob-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .prob-card {
+            padding: 16px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .prob-card.danger {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(239, 68, 68, 0.05) 100%);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .prob-card.success {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(16, 185, 129, 0.05) 100%);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .prob-label {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 6px;
+        }
+
+        .prob-card.danger .prob-label {
+            color: var(--danger);
+        }
+
+        .prob-card.success .prob-label {
+            color: var(--success);
+        }
+
+        .prob-value {
+            font-size: 2rem;
+            font-weight: 800;
+        }
+
+        .prob-card.danger .prob-value {
+            color: var(--danger);
+        }
+
+        .prob-card.success .prob-value {
+            color: var(--success);
+        }
+
+        .result-message {
+            padding: 12px 16px;
+            border-radius: 10px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-bottom: 16px;
+        }
+
+        .result-message.danger {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--danger);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .result-message.success {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--success);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .recommendations {
+            margin-top: 16px;
+        }
+
+        .rec-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .rec-grid {
+            display: grid;
+            gap: 10px;
+        }
+
+        .rec-card {
+            background: var(--bg-dark);
+            border-radius: 12px;
+            padding: 14px 16px;
+            border: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s;
+        }
+
+        .rec-card:hover {
+            border-color: var(--primary);
+            transform: translateX(4px);
+        }
+
+        .rec-info h4 {
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-bottom: 2px;
+        }
+
+        .rec-info p {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .rec-price {
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: var(--primary);
+        }
+
+        .rec-badge {
+            font-size: 0.6rem;
+            padding: 3px 6px;
+            border-radius: 4px;
+            margin-left: 6px;
+            background: rgba(236, 72, 153, 0.2);
+            color: #ec4899;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 50px 20px;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 12px;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* ========== VISUALIZATION - Horizontal scroll with large images ========== */
+        .viz-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .viz-scroll-wrapper {
+            overflow-x: auto;
+            padding-bottom: 20px;
+        }
+
+        .viz-scroll-wrapper::-webkit-scrollbar {
+            height: 12px;
+        }
+
+        .viz-scroll-wrapper::-webkit-scrollbar-track {
+            background: var(--bg-card);
+            border-radius: 6px;
+        }
+
+        .viz-scroll-wrapper::-webkit-scrollbar-thumb {
+            background: #2563eb;
+            border-radius: 6px;
+        }
+
+        .viz-scroll-wrapper::-webkit-scrollbar-thumb:hover {
+            background: var(--primary-dark);
+        }
+
+        .viz-grid {
+            display: flex;
+            gap: 24px;
+            padding: 8px 0;
+        }
+
+        /* Each page contains 6 charts (3x2 grid) */
+        .viz-page {
+            flex: 0 0 auto;
+            width: calc(100vw - 80px);
+            max-width: 1350px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+            gap: 16px;
+        }
+
+        .viz-card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .viz-card:hover {
+            border-color: var(--primary);
+            box-shadow: 0 8px 30px rgba(37, 99, 235, 0.2);
+        }
+
+        .viz-card img {
+            width: 100%;
+            flex: 1;
+            min-height: 180px;
+            object-fit: contain;
+            display: block;
+            background: white;
+            padding: 10px;
+        }
+
+        .viz-card-title {
+            padding: 12px 14px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            background: var(--bg-card-hover);
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        .back-btn {
+            margin-bottom: 16px;
+        }
+
+        /* Image Modal */
+        .img-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+        }
+
+        .img-modal.active {
+            display: flex;
+        }
+
+        .img-modal img {
+            max-width: 95%;
+            max-height: 95%;
+            border-radius: 12px;
+        }
+
+        .img-modal-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .img-modal-close:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: rotate(90deg);
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Image Modal -->
+    <div class="img-modal" id="imgModal">
+        <button class="img-modal-close" onclick="closeImage()">×</button>
+        <img id="modalImg" src="" alt="Chart">
+    </div>
+
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <div class="logo-icon">🎯</div>
+                <div class="logo-text">
+                    <h1>Churn Predictor</h1>
+                    <p>Dashboard dự đoán khách hàng</p>
+                </div>
+            </div>
+            <div class="header-actions">
+                <div class="status-badge" id="statusBadge">
+                    <span class="status-dot"></span>
+                    <span id="statusText">Đang kết nối...</span>
+                </div>
+                <button class="btn btn-outline active" id="btnPredict" onclick="showPage('predict')">🔮 Dự đoán</button>
+                <button class="btn btn-outline" id="btnViz" onclick="showPage('viz')">📊 Trực quan hóa</button>
+            </div>
+        </header>
+
+        <!-- PAGE 1: PREDICTION -->
+        <div class="page active" id="pagePrediction">
+            <div class="predict-grid">
+                <!-- Left: Form + SHAP -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon blue">👤</div>
+                        <span class="card-title">Thông tin khách hàng</span>
+                    </div>
+                    <div class="card-body">
+                        <form id="predictionForm">
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label class="form-label">Tuổi</label>
+                                    <input type="number" id="age" value="30" min="0" class="form-control">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Giới tính</label>
+                                    <select id="gender" class="form-control">
+                                        <option>Male</option>
+                                        <option>Female</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Tổng chi tiêu (USD)</label>
+                                    <input type="number" id="total_spend" value="500" min="0" class="form-control">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Loại hợp đồng</label>
+                                    <select id="subscription" class="form-control">
+                                        <option>Basic</option>
+                                        <option>Standard</option>
+                                        <option>Premium</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Độ dài hợp đồng</label>
+                                    <select id="contract_length" class="form-control">
+                                        <option>Monthly</option>
+                                        <option>Quarterly</option>
+                                        <option>Annual</option>
+                                    </select>
+                                </div>
+                                <div class="form-group slider-container">
+                                    <label class="form-label">Tenure (tháng)</label>
+                                    <span class="slider-value" id="tenure_val">12</span>
+                                    <input type="range" id="tenure" value="12" min="0" max="72"
+                                        oninput="document.getElementById('tenure_val').textContent=this.value">
+                                </div>
+                                <div class="form-group slider-container">
+                                    <label class="form-label">Tần suất sử dụng</label>
+                                    <span class="slider-value" id="usage_val">50</span>
+                                    <input type="range" id="usage" value="50" min="0" max="100"
+                                        oninput="document.getElementById('usage_val').textContent=this.value">
+                                </div>
+                                <div class="form-group slider-container">
+                                    <label class="form-label">Số cuộc gọi hỗ trợ</label>
+                                    <span class="slider-value" id="support_val">2</span>
+                                    <input type="range" id="support_calls" value="2" min="0" max="20"
+                                        oninput="document.getElementById('support_val').textContent=this.value">
+                                </div>
+                                <div class="form-group slider-container">
+                                    <label class="form-label">Trễ thanh toán (ngày)</label>
+                                    <span class="slider-value" id="delay_val">0</span>
+                                    <input type="range" id="payment_delay" value="0" min="0" max="30"
+                                        oninput="document.getElementById('delay_val').textContent=this.value">
+                                </div>
+                                <div class="form-group slider-container">
+                                    <label class="form-label">Ngày tương tác gần nhất</label>
+                                    <span class="slider-value" id="last_val">10</span>
+                                    <input type="range" id="last_interaction" value="10" min="0" max="365"
+                                        oninput="document.getElementById('last_val').textContent=this.value">
+                                </div>
+                                <div class="form-group full" style="margin-top: 8px;">
+                                    <button type="submit" class="btn btn-primary" id="predictBtn"
+                                        style="width: 100%; justify-content: center;">🔍 Dự đoán ngay</button>
+                                </div>
+                            </div>
+                        </form>
+
+                        <!-- SHAP moved here -->
+                        <div class="shap-section" id="shapSection" style="display: none;">
+                            <div class="shap-title">📊 Phân tích SHAP - Yếu tố ảnh hưởng</div>
+                            <div class="shap-grid">
+                                <div class="shap-card danger">
+                                    <div class="shap-card-header">🔴 Yếu tố rời đi</div>
+                                    <img id="shapPos" src="" alt="SHAP Positive">
+                                </div>
+                                <div class="shap-card success">
+                                    <div class="shap-card-header">🟢 Yếu tố giữ chân</div>
+                                    <img id="shapNeg" src="" alt="SHAP Negative">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Result + Recommendations -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon green">📈</div>
+                        <span class="card-title">Kết quả dự đoán</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="result-placeholder" id="placeholder">
+                            <div class="result-placeholder-icon">🎯</div>
+                            <p>Nhập thông tin và nhấn "Dự đoán" để xem kết quả</p>
+                        </div>
+                        <div class="loading" id="loading">
+                            <div class="spinner"></div>
+                            <p>Đang phân tích...</p>
+                        </div>
+                        <div class="result-content" id="resultContent">
+                            <div class="prob-grid">
+                                <div class="prob-card danger">
+                                    <div class="prob-label">Xác suất rời bỏ</div>
+                                    <div class="prob-value" id="probChurn">--</div>
+                                </div>
+                                <div class="prob-card success">
+                                    <div class="prob-label">Xác suất gắn bó</div>
+                                    <div class="prob-value" id="probStay">--</div>
+                                </div>
+                            </div>
+                            <div class="result-message" id="resultMsg"></div>
+                            <div class="recommendations">
+                                <div class="rec-title">🌟 Gợi ý gói cước phù hợp</div>
+                                <div class="rec-grid" id="recGrid"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PAGE 2: VISUALIZATION - Single horizontal scroll -->
+        <div class="page" id="pageVisualization">
+            <button class="btn btn-outline back-btn" onclick="showPage('predict')">← Quay lại Dự đoán</button>
+            <div class="viz-title">📊 Tất cả biểu đồ trực quan hóa (cuộn ngang để xem tiếp)</div>
+            <div class="viz-scroll-wrapper">
+                <div class="viz-grid">
+                    <!-- Page 1: 6 EDA charts -->
+                    <div class="viz-page">
+                        <div class="viz-card" onclick="openImage('http://127.0.0.1:5000/static/eda_07_heatmap.png')">
+                            <img src="http://127.0.0.1:5000/static/eda_07_heatmap.png" alt="Heatmap">
+                            <div class="viz-card-title">Ma trận tương quan (Heatmap)</div>
+                        </div>
+                        <div class="viz-card"
+                            onclick="openImage('http://127.0.0.1:5000/static/eda_01_churn_distribution.png')">
+                            <img src="http://127.0.0.1:5000/static/eda_01_churn_distribution.png" alt="Churn">
+                            <div class="viz-card-title">Phân bổ Churn</div>
+                        </div>
+                        <div class="viz-card" onclick="openImage('http://127.0.0.1:5000/static/eda_02_0_age.png')">
+                            <img src="http://127.0.0.1:5000/static/eda_02_0_age.png" alt="Age">
+                            <div class="viz-card-title">Phân tích Tuổi (KDE)</div>
+                        </div>
+                        <div class="viz-card" onclick="openImage('http://127.0.0.1:5000/static/eda_02_1_tenure.png')">
+                            <img src="http://127.0.0.1:5000/static/eda_02_1_tenure.png" alt="Tenure">
+                            <div class="viz-card-title">Tenure (KDE)</div>
+                        </div>
+                        <div class="viz-card"
+                            onclick="openImage('http://127.0.0.1:5000/static/eda_02_2_total_spend.png')">
+                            <img src="http://127.0.0.1:5000/static/eda_02_2_total_spend.png" alt="Spend">
+                            <div class="viz-card-title">Total Spend (Boxplot)</div>
+                        </div>
+                        <div class="viz-card"
+                            onclick="openImage('http://127.0.0.1:5000/static/eda_02_3_usage_frequency.png')">
+                            <img src="http://127.0.0.1:5000/static/eda_02_3_usage_frequency.png" alt="Usage">
+                            <div class="viz-card-title">Usage Frequency</div>
+                        </div>
+                    </div>
+
+                    <!-- Page 2: 6 more charts -->
+                    <div class="viz-page">
+                        <div class="viz-card"
+                            onclick="openImage('http://127.0.0.1:5000/static/eda_02_4_support_calls.png')">
+                            <img src="http://127.0.0.1:5000/static/eda_02_4_support_calls.png" alt="Calls">
+                            <div class="viz-card-title">Support Calls</div>
+                        </div>
+                        <div class="viz-card"
+                            onclick="openImage('http://127.0.0.1:5000/static/eda_02_5_payment_delay.png')">
+                            <img src="http://127.0.0.1:5000/static/eda_02_5_payment_delay.png" alt="Delay">
+                            <div class="viz-card-title">Payment Delay</div>
+                        </div>
+                        <div class="viz-card"
+                            onclick="openImage('http://127.0.0.1:5000/static/eda_02_6_last_interaction.png')">
+                            <img src="http://127.0.0.1:5000/static/eda_02_6_last_interaction.png" alt="Last">
+                            <div class="viz-card-title">Last Interaction</div>
+                        </div>
+                        <div class="viz-card" onclick="openImage('http://127.0.0.1:5000/static/eda_03_0_gender.png')">
+                            <img src="http://127.0.0.1:5000/static/eda_03_0_gender.png" alt="Gender">
+                            <div class="viz-card-title">Gender</div>
+                        </div>
+                        <div class="viz-card"
+                            onclick="openImage('http://127.0.0.1:5000/static/eda_03_1_subscription_type.png')">
+                            <img src="http://127.0.0.1:5000/static/eda_03_1_subscription_type.png" alt="Sub">
+                            <div class="viz-card-title">Subscription Type</div>
+                        </div>
+                        <div class="viz-card"
+                            onclick="openImage('http://127.0.0.1:5000/static/eda_03_2_contract_length.png')">
+                            <img src="http://127.0.0.1:5000/static/eda_03_2_contract_length.png" alt="Contract">
+                            <div class="viz-card-title">Contract Length</div>
+                        </div>
+                    </div>
+
+                    <!-- Page 3: Encoding & Scaling -->
+                    <div class="viz-page">
+                        <div class="viz-card"
+                            onclick="openImage('http://127.0.0.1:5000/static/eda_04_gender_encoded.png')">
+                            <img src="http://127.0.0.1:5000/static/eda_04_gender_encoded.png" alt="GenderEnc">
+                            <div class="viz-card-title">Gender (Encoded)</div>
+                        </div>
+                        <div class="viz-card"
+                            onclick="openImage('http://127.0.0.1:5000/static/eda_05_subscription_encoded.png')">
+                            <img src="http://127.0.0.1:5000/static/eda_05_subscription_encoded.png" alt="SubEnc">
+                            <div class="viz-card-title">Subscription (Encoded)</div>
+                        </div>
+                        <div class="viz-card"
+                            onclick="openImage('http://127.0.0.1:5000/static/eda_06_contract_encoded.png')">
+                            <img src="http://127.0.0.1:5000/static/eda_06_contract_encoded.png" alt="ContractEnc">
+                            <div class="viz-card-title">Contract (Encoded)</div>
+                        </div>
+                        <div class="viz-card"
+                            onclick="openImage('http://127.0.0.1:5000/static/eda_08_scaling_comparison.png')">
+                            <img src="http://127.0.0.1:5000/static/eda_08_scaling_comparison.png" alt="Scaling">
+                            <div class="viz-card-title">Scaling Comparison</div>
+                        </div>
+                        <div class="viz-card"
+                            onclick="openImage('http://127.0.0.1:5000/static/eval_01_classification_report.png')">
+                            <img src="http://127.0.0.1:5000/static/eval_01_classification_report.png" alt="Report">
+                            <div class="viz-card-title">Classification Report</div>
+                        </div>
+                        <div class="viz-card"
+                            onclick="openImage('http://127.0.0.1:5000/static/eval_02_confusion_matrix.png')">
+                            <img src="http://127.0.0.1:5000/static/eval_02_confusion_matrix.png" alt="CM">
+                            <div class="viz-card-title">Confusion Matrix</div>
+                        </div>
+                    </div>
+
+                    <!-- Page 4: Model Evaluation -->
+                    <div class="viz-page">
+                        <div class="viz-card"
+                            onclick="openImage('http://127.0.0.1:5000/static/eval_03_feature_importance.png')">
+                            <img src="http://127.0.0.1:5000/static/eval_03_feature_importance.png" alt="FI">
+                            <div class="viz-card-title">Feature Importance</div>
+                        </div>
+                        <div class="viz-card" onclick="openImage('http://127.0.0.1:5000/static/eval_04_roc_curve.png')">
+                            <img src="http://127.0.0.1:5000/static/eval_04_roc_curve.png" alt="ROC">
+                            <div class="viz-card-title">ROC Curve</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const backendUrl = 'http://127.0.0.1:5000';
+
+        function showPage(page) {
+            document.getElementById('pagePrediction').classList.remove('active');
+            document.getElementById('pageVisualization').classList.remove('active');
+            document.getElementById('btnPredict').classList.remove('active');
+            document.getElementById('btnViz').classList.remove('active');
+            if (page === 'predict') {
+                document.getElementById('pagePrediction').classList.add('active');
+                document.getElementById('btnPredict').classList.add('active');
+            } else {
+                document.getElementById('pageVisualization').classList.add('active');
+                document.getElementById('btnViz').classList.add('active');
+            }
+        }
+
+        const imgModal = document.getElementById('imgModal');
+        function openImage(src) { document.getElementById('modalImg').src = src; imgModal.classList.add('active'); }
+        function closeImage() { imgModal.classList.remove('active'); }
+        imgModal.onclick = (e) => { if (e.target === imgModal) closeImage(); };
+
+        async function checkBackend() {
+            try {
+                const res = await fetch(`${backendUrl}/static/eda_01_churn_distribution.png`, { method: 'HEAD' });
+                if (res.ok) document.getElementById('statusText').textContent = 'Backend hoạt động';
+            } catch {
+                document.getElementById('statusText').textContent = 'Lỗi kết nối';
+                document.getElementById('statusBadge').style.background = 'rgba(239,68,68,0.15)';
+                document.getElementById('statusBadge').style.borderColor = 'rgba(239,68,68,0.3)';
+                document.getElementById('statusBadge').style.color = '#ef4444';
+            }
+        }
+
+        const allPackages = [
+            { name: "Gói 3 năm", price: 3400, duration: "3 năm", sub: "Premium", contract: "Annual" },
+            { name: "Gói 2 năm", price: 2100, duration: "2 năm", sub: "Premium", contract: "Annual" },
+            { name: "Gói 1 năm", price: 1200, duration: "1 năm", sub: "Premium", contract: "Annual" },
+            { name: "Gói 6 tháng", price: 700, duration: "6 tháng", sub: "Premium", contract: "Quarterly" },
+            { name: "Gói 2 năm", price: 1700, duration: "2 năm", sub: "Standard", contract: "Annual" },
+            { name: "Gói 1 năm", price: 900, duration: "1 năm", sub: "Standard", contract: "Annual" },
+            { name: "Gói 6 tháng", price: 500, duration: "6 tháng", sub: "Standard", contract: "Quarterly" },
+            { name: "Gói 3 tháng", price: 210, duration: "3 tháng", sub: "Standard", contract: "Monthly" },
+            { name: "Gói 1 năm", price: 500, duration: "1 năm", sub: "Basic", contract: "Annual" },
+            { name: "Gói 6 tháng", price: 280, duration: "6 tháng", sub: "Basic", contract: "Quarterly" },
+            { name: "Gói 1 tháng", price: 60, duration: "1 tháng", sub: "Basic", contract: "Monthly" },
+            { name: "Gói 7 ngày", price: 20, duration: "7 ngày", sub: "Basic", contract: "Monthly" }
+        ];
+
+        function getRecommendations(formData, churnProb) {
+            const budget = parseFloat(formData.total_spend);
+            let candidates = allPackages.filter(p => p.price <= budget).map(p => ({ ...p, score: 0 }));
+            if (budget >= 3400) candidates = allPackages.map(p => ({ ...p, score: 0 }));
+            candidates.forEach(p => { if (p.sub === formData.subscription) p.score += 30; p.score += (p.price / Math.max(budget, 1)) * 20; });
+            candidates.sort((a, b) => b.score - a.score || b.price - a.price);
+            return candidates.slice(0, 3);
+        }
+
+        function renderRecommendations(packages, gender) {
+            const grid = document.getElementById('recGrid');
+            if (!packages.length) { grid.innerHTML = '<p style="color:var(--text-secondary)">Không tìm thấy gói phù hợp</p>'; return; }
+            grid.innerHTML = packages.map(pkg => {
+                let price = pkg.price, badge = '';
+                if (gender === 'Female') { if (pkg.price <= 60) { price *= 0.5; badge = '<span class="rec-badge">-50%</span>'; } else { price -= 50; badge = '<span class="rec-badge">-$50</span>'; } }
+                return `<div class="rec-card"><div class="rec-info"><h4>${pkg.name} - ${pkg.sub}${badge}</h4><p>${pkg.duration} • ${pkg.contract}</p></div><div class="rec-price">$${price.toFixed(0)}</div></div>`;
+            }).join('');
+        }
+
+        document.getElementById('predictionForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const age = parseInt(document.getElementById('age').value);
+            const spend = parseFloat(document.getElementById('total_spend').value);
+            if (isNaN(age) || age < 0 || !Number.isInteger(age)) { alert('Tuổi phải là số nguyên không âm!'); return; }
+            if (isNaN(spend) || spend < 0) { alert('Chi tiêu phải là số không âm!'); return; }
+
+            const formData = { age, tenure: document.getElementById('tenure').value, usage: document.getElementById('usage').value, support_calls: document.getElementById('support_calls').value, gender: document.getElementById('gender').value, payment_delay: document.getElementById('payment_delay').value, total_spend: spend, last_interaction: document.getElementById('last_interaction').value, subscription: document.getElementById('subscription').value, contract_length: document.getElementById('contract_length').value };
+
+            document.getElementById('placeholder').style.display = 'none';
+            document.getElementById('loading').classList.add('active');
+            document.getElementById('resultContent').classList.remove('active');
+            document.getElementById('shapSection').style.display = 'none';
+            document.getElementById('predictBtn').disabled = true;
+
+            try {
+                const res = await fetch(`${backendUrl}/predict`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(formData) });
+                if (!res.ok) throw new Error('Server error');
+                const data = await res.json();
+
+                document.getElementById('probChurn').textContent = `${(data.prob_churn * 100).toFixed(1)}%`;
+                document.getElementById('probStay').textContent = `${(data.prob_stay * 100).toFixed(1)}%`;
+                const msg = document.getElementById('resultMsg');
+                if (data.prob_churn > 0.5) { msg.textContent = '⚠️ Khách hàng có nguy cơ RỜI BỎ cao!'; msg.className = 'result-message danger'; }
+                else { msg.textContent = '✅ Khách hàng có khả năng GẮN BÓ!'; msg.className = 'result-message success'; }
+
+                document.getElementById('shapPos').src = `data:image/png;base64,${data.shap_pos_b64}`;
+                document.getElementById('shapNeg').src = `data:image/png;base64,${data.shap_neg_b64}`;
+                document.getElementById('shapSection').style.display = 'block';
+
+                renderRecommendations(getRecommendations(formData, data.prob_churn), formData.gender);
+
+                document.getElementById('loading').classList.remove('active');
+                document.getElementById('resultContent').classList.add('active');
+            } catch (err) {
+                alert('Lỗi: ' + err.message);
+                document.getElementById('loading').classList.remove('active');
+                document.getElementById('placeholder').style.display = 'block';
+            } finally { document.getElementById('predictBtn').disabled = false; }
+        });
+
+        showPage('predict');
+        checkBackend();
+    </script>
+</body>
+
+</html>
