@@ -381,9 +381,6 @@ def serve_static(filename):
 # CHẠY SERVER 
 if __name__ == '__main__':
     import os
-    # Render sẽ truyền một biến môi trường tên là PORT vào
-    port = int(os.environ.get("PORT", 5000))
-    
-    print(f"Backend Server đang chạy tại cổng: {port}")
-    # Host phải là 0.0.0.0 để server bên ngoài truy cập được vào
+    # Hugging Face Spaces mặc định dùng cổng 7860
+    port = int(os.environ.get("PORT", 7860))
     app.run(host='0.0.0.0', port=port, debug=False)
