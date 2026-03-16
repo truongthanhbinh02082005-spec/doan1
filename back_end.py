@@ -380,6 +380,10 @@ def serve_static(filename):
 
 # CHẠY SERVER 
 if __name__ == '__main__':
-    print(f"Backend Server đang chạy tại http://127.0.0.1:5000")
-    print("Nhấn CTRL+C để tắt server.")
-    app.run(debug=False, port=5000)
+    import os
+    # Render sẽ truyền một biến môi trường tên là PORT vào
+    port = int(os.environ.get("PORT", 5000))
+    
+    print(f"Backend Server đang chạy tại cổng: {port}")
+    # Host phải là 0.0.0.0 để server bên ngoài truy cập được vào
+    app.run(host='0.0.0.0', port=port, debug=False)
